@@ -4,8 +4,12 @@
  * Author: ???
  * Date: ???
  * 
- * Compilation command:
- *      gcc covariance.c -o covariance -lm -O3
+ * Compilation:
+//#PBS -l mem=128gb 
+//module avail
+//module load ...
+//mpicc covarianceMPI.c -o covariance -lm -O3
+//mpirun -np 1 ./covariance
  * */
 
 #include <stdlib.h>
@@ -81,6 +85,7 @@ int main( int argc , char ** argv )
         
         fclose(fp);
     }
+      double tio = e_t(); // stop timing
 
     // Test data: print out first and last elements
     if(ip == 0){
@@ -128,13 +133,14 @@ int main( int argc , char ** argv )
     // compute covariance matrix
     printf("# COMPUTING COVARIANCE MATRIX\n");
     double cov[NVARS+5][NVARS+5];
+    double all_cov[NVARS+5][NVARS+5];
     for(i=0; i<NVARS+5; i++) for(j=0; j<=i; j++)
     {
         cov[i][j]=0.0;
         for(k=0; k<get_Nip(ip,np,NELEMENTS); k++) 
             cov[i][j]+=var[i][k]*var[j][k]; 
-        MPI_Allreduce(&cov[i][j],&cov_global[i][j],1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-        cov_global[i][j]/=(NELEMENTS-1);
+        MPI_Allreduce(&cov[i][j],&all_cov[i][j],1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+        all_cov[i][j]/=(NELEMENTS-1);
 
     }
 
