@@ -1,0 +1,41 @@
+#!/bin/bash -l
+#PBS -N MPI_covariance
+## NOTE: nodes have 20 physical cores and 40 virtual cores
+##       To allocate whole node you need to ask for ppn=40
+#PBS -l nodes=2:ppn=40
+#PBS -l walltime=1:00:00
+#PBS -j oe
+
+## ------ QUEUE SYSTEM ------
+## For submission use:
+##      qsub job.dwarf
+## For checking status use:
+##      qstat
+## To kill job use:
+##      qdel jobid
+
+# go to submission folder
+cd $PBS_O_WORKDIR/
+
+module load openmpi-gcc721-Cuda90/3.1.1
+
+
+# and run commands
+#mpirun -np 1 ./covariance > out.1
+
+
+mpirun -np 1 ./covariance > out.1
+mpirun -np 2 ./covariance > out.2
+mpirun -np 4 ./covariance > out.4
+mpirun -np 8 ./covariance > out.8
+mpirun -np 16 ./covariance > out.16
+mpirun -np 20 ./covariance > out.20
+mpirun -np 30 ./covariance > out.30
+mpirun -np 40 ./covariance > out.40
+mpirun -np 80 ./covariance > out.80
+# export OMP_NUM_THREADS=2
+# ./covariance > out.2
+
+# # and so on
+# export OMP_NUM_THREADS=40
+# ./covariance > out.40

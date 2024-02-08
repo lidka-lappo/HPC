@@ -1,0 +1,26 @@
+#!/bin/bash -l
+#PBS -N CUDA_laplace
+## NOTE: nodes have 20 physical cores and 40 virtual cores
+##       To allocate whole node you need to ask for ppn=40
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=1:00:00
+#PBS -j oe
+
+## ------ QUEUE SYSTEM ------
+## For submission use:
+##      qsub job.dwarf
+## For checking status use:
+##      qstat
+## To kill job use:
+##      qdel jobid
+
+# go to submission folder
+cd $PBS_O_WORKDIR/
+
+module load cuda/9.1
+
+# and run commands
+
+
+
+./laplacu > out.1
