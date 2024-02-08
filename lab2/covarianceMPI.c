@@ -152,7 +152,7 @@ int main( int argc , char ** argv )
         }
 
         FILE *fptr;
-        fptr = fopen("/home/ops003/HPC/lab2/t.txt", "a");
+        fptr = fopen("/home/ops005/HPC/lab2/t.txt", "a");
         fprintf(fptr, "%f\t%d\n",tcmp,np);
         fclose(fptr); 
 
