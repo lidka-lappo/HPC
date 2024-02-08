@@ -92,7 +92,7 @@ int main( int argc , char ** argv )
         printf("# READ TIME (process 0): %f sec\n", tio);
         // Test data: print out first and last elements
         for(i=0; i<NVARS; i++) printf("%8d %16.8f\n", 0, var[i][0]);
-        for(i=0; i<NVARS; i++) printf("%8d %16.8f\n", -1, var[i][getNip(ip,np,NELEMENTS)-1]);
+        for(i=0; i<NVARS; i++) printf("%8d %16.8f\n", -1, var[i][get_Nip(ip,np,NELEMENTS)-1]);
     }
 
     // allocate additional buffers
