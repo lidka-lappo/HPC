@@ -47,7 +47,7 @@ def compute_covariance(data):
 # Load data
 data = np.empty((NVARS, NELEMENTS), dtype=np.double)
 for i in range(NVARS):
-    file_name = "/home2/archive/mct/labs/lab1/var{}.dat".format(i+1)
+    file_name = "/home2/archive/mct/labs/lab1/var" + str(i+1) + ".dat"
     with open(file_name, "rb") as f:
         data[i] = np.fromfile(f, dtype=np.double)
 
