@@ -47,7 +47,7 @@ def compute_covariance(data):
 # Load data
 data = np.empty((NVARS, NELEMENTS), dtype=np.double)
 for i in range(NVARS):
-    file_name = f"/home2/archive/mct/labs/lab1/var{i+1}.dat"
+    file_name = "/home2/archive/mct/labs/lab1/var{}.dat".format(i+1)
     with open(file_name, "rb") as f:
         data[i] = np.fromfile(f, dtype=np.double)
 
@@ -57,4 +57,4 @@ covariance_matrix = compute_covariance(data)
 # Print results
 for i in range(NVARS+5):
     for j in range(i+1):
-        print(f"cov({i+1},{j+1}) = {covariance_matrix[i,j]}")
+        print("cov({},{}) = {}".format(i+1, j+1, covariance_matrix[i,j]))
