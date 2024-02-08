@@ -1,5 +1,5 @@
 // covariance.c
-
+//gcc -shared -o covariance.so -fopenmp -fPIC covariance.c 
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
