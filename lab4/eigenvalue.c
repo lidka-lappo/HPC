@@ -9,7 +9,7 @@
 #include "mct_utils.h"
 
 #include <cblas.h>
-#include <lapacke.h>
+
 
 double matrix_H(int k, int l)
 {
