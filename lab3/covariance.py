@@ -1,60 +1,39 @@
-import ctypes
-import os
 import numpy as np
-from time import time
+import time
+from ctypes import CDLL, c_long, c_double
+from numpy.ctypeslib import ndpointer
 
-# Load the C library
-lib = ctypes.CDLL(os.path.abspath("covariance.so"))
+# Load the shared library
+covariance = CDLL("covariance.so")
 
-# Define the C function prototypes
-covariance_compute = lib.covariance_compute
-covariance_compute.restype = None
-covariance_compute.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t]
+# Define the function prototypes
+covariance.connect.restype = None
+covariance.connect.argtypes = None
 
-# Define constants
-NELEMENTS = 134217728
-NVARS = 5
+covariance.get_var.restype = None
+covariance.get_var.argtypes = [c_long, c_long, ndpointer(c_double)]
 
-def compute_covariance(data):
-    """
-    Compute covariance matrix of the given data.
+covariance.compute_covariance.restype = None
+covariance.compute_covariance.argtypes = [c_long, c_long, ndpointer(c_double), ndpointer(c_double)]
 
-    Parameters:
-    - data: numpy array of shape (NVARS, NELEMENTS) containing the data.
+# Read data from files
+print("# READING DATA")
+file_paths = [f"/home2/archive/mct/labs/lab1/var{i+1}.dat" for i in range(5)]
+arrays = [np.fromfile(file_path, dtype=np.double) for file_path in file_paths]
+arrays += [np.zeros_like(arrays[0]) for _ in range(5)]
+arrays = np.stack(arrays, axis=0)
 
-    Returns:
-    - covariance matrix: numpy array of shape (NVARS+5, NVARS+5) containing the covariance matrix.
-    """
-    t_start = time()
+start_time = time.time()
 
-    # Compute auxiliary variables
-    aux_vars = np.empty((NVARS+5, NELEMENTS), dtype=np.double)
-    lib.compute_auxiliary_variables(data.ctypes.data_as(ctypes.c_void_p), aux_vars.ctypes.data_as(ctypes.c_void_p), ctypes.c_size_t(NELEMENTS))
+# Call the functions from the shared library
+covariance.connect()
 
-    # Compute averages and subtract them from variables
-    avg = np.mean(data, axis=1)
-    data -= avg[:, np.newaxis]
+get_var = covariance.get_var
+get_var(arrays.shape[1], 5, arrays)
 
-    # Compute covariance matrix
-    covariance = np.empty((NVARS+5, NVARS+5), dtype=np.double)
-    covariance_compute(data.ctypes.data_as(ctypes.c_void_p), covariance.ctypes.data_as(ctypes.c_void_p), ctypes.c_size_t(NELEMENTS), ctypes.c_size_t(NVARS))
+cov_matrix = np.zeros(shape=(10, 10), dtype=np.double)
+covariance.compute_covariance(arrays.shape[1], 5, arrays, cov_matrix)
 
-    t_end = time()
-    print("Computation time:", t_end - t_start, "sec")
-
-    return covariance
-
-# Load data
-data = np.empty((NVARS, NELEMENTS), dtype=np.double)
-for i in range(NVARS):
-    file_name = "/home2/archive/mct/labs/lab1/var" + str(i+1) + ".dat"
-    with open(file_name, "rb") as f:
-        data[i] = np.fromfile(f, dtype=np.double)
-
-# Compute covariance matrix
-covariance_matrix = compute_covariance(data)
-
-# Print results
-for i in range(NVARS+5):
-    for j in range(i+1):
-        print("cov({},{}) = {}".format(i+1, j+1, covariance_matrix[i,j]))
+end_time = time.time()
+computation_time = end_time - start_time
+print(f"COMPUTATION TIME: {computation_time} s")
