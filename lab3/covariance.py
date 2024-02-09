@@ -14,8 +14,8 @@ covariance.connect.argtypes = None
 covariance.get_var.restype = None
 covariance.get_var.argtypes = [c_long, c_long, ndpointer(c_double)]
 
-covariance.compute_covariance.restype = None
-covariance.compute_covariance.argtypes = [c_long, c_long, ndpointer(c_double), ndpointer(c_double)]
+covariance.get_covariance.restype = None
+covariance.get_covariance.argtypes = [c_long, c_long, ndpointer(c_double), ndpointer(c_double)]
 
 # Read data from files
 print("# READING DATA")
