@@ -4,7 +4,8 @@ from ctypes import CDLL, c_long, c_double
 from numpy.ctypeslib import ndpointer
 
 # Load the shared library
-covariance = CDLL("covariance.so")
+
+covariance = CDLL("./covariance.so")
 
 # Define the function prototypes
 covariance.connect.restype = None
