@@ -8,16 +8,9 @@
 
 #include "mct_utils.h"
 
-// use C interface 
 #include <cblas.h>
-#include <lapacke.h> // Include LAPACKE header
+#include <lapacke.h>
 
-#define N 400
-
-/**
- * Function returns value of matrix element A_{ij}
- * i,j iterates from 1 to M as in standard mathematical notation
- */
 double matrix_H(int k, int l)
 {
     #define omega 0.001
@@ -26,63 +19,79 @@ double matrix_H(int k, int l)
     #define m 1.0
     
     double K, V;
-    if(k == l)
+    if(k==l)
     {
-        K = pow(hbar * M_PI / a, 2) / (6. * m) * (1.0 + 2.0 / (N * N));
-        V = 0.5 * m * pow(omega * a * (k - N / 2), 2);
+        K=pow(hbar*M_PI/a,2)/(6.*m)*(1.0 + 2.0/(N*N));
+        V=0.5*m*pow(omega*a*(k-N/2),2);
     }
     else
     {
-        K = pow(hbar * M_PI / a, 2) / (1. * m * N * N) * pow(-1, k - l) / pow(sin(M_PI * (k - l) / N), 2);
-        V = 0.0;
+        K=pow(hbar*M_PI/a,2)/(1.*m*N*N) * pow(-1,k-l) / pow(sin(M_PI*(k-l)/N),2);
+        V=0.0;
     }
     
-    return K + V;
+    return K+V;
+    
+    #undef a
+    #undef m
 }
 
-#define IDX1(i,j) ((j-1) * N + (i-1))
+#define IDX1(i,j) (j-1)*N + (i-1)
 
 int main()
 {
+    
     double *H; // hamiltonian matrix
-    H = (double *)malloc(N * N * sizeof(double)); // Allocate memory using malloc
+    H = (double*)malloc(N*N*sizeof(double));
+    if (H == NULL) {
+        printf("Memory allocation failed.\n");
+        return -1;
+    }
 
     double *E; // buffer for eigen values
-    E = (double *)malloc(N * sizeof(double)); // Allocate memory using malloc
+    E = (double*)malloc(N*sizeof(double));
+    if (E == NULL) {
+        printf("Memory allocation failed.\n");
+        free(H);
+        return -1;
+    }
         
-    int i, j;
+    int i,j;
     double rt;
     
     // set matrix
-    for(i = 1; i <= N; i++) {
-        for(j = 1; j <= N; j++) {
-            H[IDX1(i, j)] = matrix_H(i, j);
-        }
-    }
+    for(i=1; i<=N; i++) for(j=1; j<=N; j++) H[IDX1(i,j)]=matrix_H(i,j);
     
     // Compute eigen values and eigen vectors
     b_t();
     
-    // Compute eigenvalues using LAPACK
-    lapack_int info;
-    info = LAPACKE_dsyevd(LAPACK_COL_MAJOR, 'N', 'U', N, H, N, E); // 'N' means eigenvalues only, 'U' means upper triangular part is stored
+    // Compute eigenvalues using LAPACK dsyevd routine
+    char jobz = 'N'; // Compute eigenvalues only
+    char uplo = 'L'; // Lower triangular part of matrix is stored
+    int lda = N;
+    int info;
     
-    rt = e_t();
-    printf("Computation time: %f sec\n", rt);
+    dsyevd(&jobz, &uplo, &N, H, &lda, E, &info);
 
-    if (info == 0) {
-        // Eigenvalues are stored in array E
-        printf("Eigenvalues:\n");
-        for (i = 0; i < N; i++) {
-            printf("%d: %f\n", i + 1, E[i]);
-        }
-    } else {
-        printf("Eigenvalue computation failed with error code: %d\n", info);
+    if (info != 0) {
+        printf("Error: dsyevd failed with error code %d\n", info);
+        free(H);
+        free(E);
+        return -1;
     }
 
-    // Free allocated memory
+    rt = e_t();
+    printf("Computation time: %fsec\n", rt);
+
+    // Print first 10 eigenvalues
+    printf("# n E_n(numerics)\n");
+    for(i=0; i<10; i++)
+    {
+        printf("%6d %16.8g\n", i, E[i]);
+    }
+
     free(H);
     free(E);
-    
+        
     return 0;
 }
