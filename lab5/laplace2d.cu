@@ -18,7 +18,9 @@
 
 // See for reference:
 // http://www.fftw.org/fftw3_doc/
-#include <fftw3.h>
+//#include <fftw3.h>
+#include <cufftw.h>
+#include <cuda_runtime_api.h>
 /**
  * Test function
  * */
@@ -74,6 +76,34 @@ void test_array_diff(int N, double *a, double *b)
     printf("# SQRT(SUM[(a-b)^2])/N : %16.8g\n", sqrt(sumd2)/N);
 }
 
+//cuda
+__global__ void mykernel(cufftDoubleComplex *fk,int ny , int nx, double dx, double dy, size_t n)
+{
+  size_t ixy = blockIdx.x*blockDim.x+threadIdx.x;
+  double ky,kx;
+  if(ixy<n)
+  {
+
+        int ix=ixy/ny;
+        int iy=ixy-ix*ny;
+
+
+        if(ix<nx/2) kx=2.*M_PI/(dx*nx)*(ix);
+        else        kx=2.*M_PI/(dx*nx)*(ix-nx);
+
+        if(iy<ny/2) ky=2.*M_PI/(dy*ny)*(iy);
+        else        ky=2.*M_PI/(dy*ny)*(iy-ny);
+
+
+        fk[ixy].x *= -1.0*(kx*kx + ky*ky) / (nx*ny);
+
+
+  }
+}
+
+
+
+
 
 int main()
 {
@@ -113,71 +143,41 @@ int main()
         ixy++;
     }
     
-    // TODO: add code here that computes laplace 2d numerically
     double *laplacefxy; // pointer to array with laplace computed numerically
     laplacefxy = (double *) malloc(nx*ny*sizeof(double)); 
 
-    // wotking buffer for fftw
-    double complex *fk = (double complex *) malloc(nx*ny*sizeof(double complex)); if(fk==NULL) { printf("Cannot allocate array fk!\n"); return 0;}
+    cufftDoubleComplex *hfk;
+    cudaMallocHost((void**)&hfk,  nx*ny*sizeof(double complex));
+
+    cufftDoubleComplex *fk;
+    cudaMalloc(&fk,nx*ny*sizeof(cufftDoubleComplex));
+
 
     // Create fftw plan
-    fftw_plan plan_f = fftw_plan_dft_2d(nx, ny, fk, fk, FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_plan plan_b = fftw_plan_dft_2d(nx, ny, fk, fk, FFTW_BACKWARD, FFTW_ESTIMATE);
+    cufftHandle plan_f;
+    cufftPlan2d(&plan_f,nx,ny,CUFFT_Z2Z);
+    cufftHandle plan_b;
+    cufftPlan2d(&plan_b,nx,ny,CUFFT_Z2Z);   
+
+
+    cudaMemcpy2D (fk, nx*sizeof(cufftDoubleComplex), fxy, nx*sizeof(double complex), nx*sizeof(double complex),ny, cudaMemcpyHostToDevice);
+
+    ixy=0;
     
-    // copy data to working buffer
-    ixy=0;
-    for(ix=0; ix<nx; ix++) for(iy=0; iy<ny; iy++) { fk[ixy] =fxy[ixy] + I*0.0; ixy++; }
+    cudaMemcpy2D (laplacefxy, nx*sizeof(double complex),fk, nx*sizeof(cufftDoubleComplex), nx*sizeof(double complex ),ny, cudaMemcpyDeviceToHost);
 
-    // compute second derivative
-    fftw_execute(plan_f);
-    // momentum space
-    double kx, ky;
-    ixy=0;
-    for(ix=0; ix<nx; ix++) for(iy=0; iy<ny; iy++)
+
+
+    cudaDeviceSynchronize();
+
+    double *laplacefxy2= (double*) malloc(nx*ny*sizeof(double));
+
+    for(int i=0;i<n;i++)
     {
-        if(ix<nx/2) kx=2.*M_PI/(dx*nx)*(ix   );
-        else        kx=2.*M_PI/(dx*nx)*(ix-nx);
-
-        if(iy<ny/2) ky=2.*M_PI/(dy*ny)*(iy   );
-        else        ky=2.*M_PI/(dy*ny)*(iy-ny);
-
-        fk[ixy] *= -1.0*(kx*kx + ky*ky) / (nx*ny);
-
-        ixy++;
+      laplacefxy2[i] = creal(laplacefxy[i]);
     }
 
-    // // NOTE: you can realize the above double loop in sigle loop
-    // for(ixy=0; ixy<nx*ny; ixy++)
-    // {
-    //     ix=ixy/ny;
-    //     iy=ixy-ix*ny;
-    //     if(ix<nx/2) kx=2.*M_PI/(dx*nx)*(ix   );
-    //     else        kx=2.*M_PI/(dx*nx)*(ix-nx);
-    //
-    //     if(iy<ny/2) ky=2.*M_PI/(dy*ny)*(iy   );
-    //     else        ky=2.*M_PI/(dy*ny)*(iy-ny);
-    //
-    //     fk[ixy] *= -1.0*(kx*kx + ky*ky) / (nx*ny);
-    // }
-
-    fftw_execute(plan_b);
-
-    // copy result to final buffer
-    ixy=0;
-    for(ix=0; ix<nx; ix++) for(iy=0; iy<ny; iy++) { laplacefxy[ixy] = creal(fk[ixy]); ixy++; }
-    
-
-    // Check correctness of computation
-    test_array_diff(nx*ny, laplacefxy, formula_laplacefxy);
-    
-//     // you can also print section of function along some direction
-//     ixy=0;
-//     for(ix=0; ix<nx; ix++) for(iy=0; iy<ny; iy++) 
-//     {
-//         if(ix==nx/2) printf("%10.6g %10.6f %10.6f %10.6f\n", x0 + dx*ix, y0 + dy*iy, laplacefxy[ixy], formula_laplacefxy[ixy]);
-// 
-//         ixy++;
-//     } 
+    test_array_diff(nx*ny, laplacefxy2, formula_laplacefxy);
     
     return 1;
 }
