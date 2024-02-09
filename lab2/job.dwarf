@@ -33,6 +33,7 @@ mpirun -np 20 ./covariance > out.20
 mpirun -np 30 ./covariance > out.30
 mpirun -np 40 ./covariance > out.40
 mpirun -np 80 ./covariance > out.80
+
 # export OMP_NUM_THREADS=2
 # ./covariance > out.2
 

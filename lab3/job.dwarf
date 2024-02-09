@@ -24,20 +24,7 @@ source scl_source enable devtoolset-8 rh-python36
 #mpirun -np 1 ./covariance > out.1
 
 
-#~ export OMP_NUM_THREADS=1
-#~ python covariance.py > out.1
 
-~ export OMP_NUM_THREADS=2
-~ python covariance.py > out.2
+export OMP_NUM_THREADS=4
+python covariance.py > out.4
 
-#export OMP_NUM_THREADS=4
-#python covariance.py > out.4
-
-
-
-# export OMP_NUM_THREADS=2
-# ./covariance > out.2
-
-# # and so on
-# export OMP_NUM_THREADS=40
-# ./covariance > out.40

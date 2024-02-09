@@ -21,6 +21,4 @@ module load cuda/9.1
 
 # and run commands
 
-
-
 ./laplacu > out.1

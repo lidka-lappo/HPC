@@ -80,7 +80,7 @@ void test_array_diff(int N, double *a, double *b)
     printf("# SQRT(SUM[(a-b)^2])/N : %16.8g\n", sqrt(sumd2)/N);
 }
 
-    // cuda kernel
+
 __global__ void mykernel(cufftDoubleComplex *fk,int ny , int nx, double dx, double dy, size_t n)
 {
   size_t ixy = blockIdx.x*blockDim.x+threadIdx.x;
@@ -122,6 +122,8 @@ int main()
     double dx = Lx/nx;
     double dy = Ly/ny;
 
+
+
     cudaSetDevice(0);
 
 
@@ -147,27 +149,28 @@ int main()
         ixy++;
     }
 
-    // TODO: add code here that computes laplace 2d numerically
     double complex *laplacefxy; // pointer to array with laplace computed numerically
     laplacefxy = (double complex *) malloc(nx*ny*sizeof(double complex));
 
 
 
 
-    cufftDoubleComplex *hfk;
-    cudaMallocHost((void**)&hfk,  nx*ny*sizeof(double complex));
+
+
+    cufftDoubleComplex *cfk;
+    cudaMallocHost((void**)&cfk,  nx*ny*sizeof(double complex));
+
 
     cufftDoubleComplex *fk;
     cudaMalloc(&fk,nx*ny*sizeof(cufftDoubleComplex));
 
-        // Create fftw plan
-
-  cufftHandle plan_f;
-  cufftPlan2d(&plan_f,nx,ny,CUFFT_Z2Z);
-  cufftHandle plan_b;
-  cufftPlan2d(&plan_b,nx,ny,CUFFT_Z2Z);
 
 
+
+    cufftHandle plan_f;
+    cufftPlan2d(&plan_f,nx,ny,CUFFT_Z2Z);
+    cufftHandle plan_b;
+    cufftPlan2d(&plan_b,nx,ny,CUFFT_Z2Z);
 
 
     cudaMemcpy2D (fk, nx*sizeof(cufftDoubleComplex), fxy, nx*sizeof(double complex), nx*sizeof(double complex),ny, cudaMemcpyHostToDevice);
@@ -188,20 +191,16 @@ int main()
     // copy result to final buffer
     ixy=0;
 
+
     cudaMemcpy2D (laplacefxy, nx*sizeof(double complex),fk, nx*sizeof(cufftDoubleComplex), nx*sizeof(double complex ),ny, cudaMemcpyDeviceToHost);
-
-
 
     cudaDeviceSynchronize();
     double *laplacefxy2= (double*) malloc(nx*ny*sizeof(double));
 
-    for(int i=0;i<n;i++)
+    for(int i=0; i<n; i++)
     {
       laplacefxy2[i] = creal(laplacefxy[i]);
     }
-
-
-
 
 
     // Check correctness of computation
